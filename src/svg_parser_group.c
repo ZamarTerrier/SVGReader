@@ -10,7 +10,30 @@ extern svgDrawing *p_ptDrawing;
 
 extern svgItem* svgParseTitle( cxml_element_node *ptXmlNode );
 
-extern void MakeSomeItem(SomeStruct *s_struct, char *ItemName, svgDrawing *ptDrawing, ItemCreateCallback callback);
+extern void MakeSomeAction(SomeStruct *s_struct, svgDrawing *ptDrawing);
+
+void MakeSomeItem2(SomeStruct *s_struct, char *ItemName, svgDrawing *ptDrawing, ItemCreateCallback callback){
+
+	char name[64];
+	memset(name, 0, 64);
+	sprintf(name, "<%s>/", ItemName);
+
+    cxml_list elem = new_cxml_list();
+    cxml_find_all(s_struct->ptXmlNode, name, &elem);
+	
+    uint32_t val = 0;
+    cxml_for_each(node2, &elem){
+        cxml_element_node *d_elm = node2;
+
+		if(d_elm != s_struct->ptXmlNode){
+			s_struct->ptNewItem = callback( d_elm );
+			s_struct->ptXmlNode = d_elm;
+		
+			MakeSomeAction(s_struct, ptDrawing);
+		}
+	}
+    cxml_list_free(&elem);
+}
 
 svgItem* svgParseGroup( cxml_element_node *ptXmlNode )
 {
@@ -30,16 +53,16 @@ svgItem* svgParseGroup( cxml_element_node *ptXmlNode )
 
 	s_struct.ptXmlNode = ptXmlNode;
 	
-	MakeSomeItem(&s_struct, SVG_TAG_TITLE, p_ptDrawing, svgParseTitle);
-	MakeSomeItem(&s_struct, SVG_TAG_DESC, p_ptDrawing, svgParseDesc);
-	MakeSomeItem(&s_struct, SVG_TAG_GROUP, p_ptDrawing, svgParseGroup);
-	MakeSomeItem(&s_struct, SVG_TAG_PATH, p_ptDrawing, svgParsePath);
-	MakeSomeItem(&s_struct, SVG_TAG_RECT, p_ptDrawing, svgParseRect);
-	MakeSomeItem(&s_struct, SVG_TAG_CIRCLE, p_ptDrawing, svgParseCircle);
-	MakeSomeItem(&s_struct, SVG_TAG_ELLIPSE, p_ptDrawing, svgParseEllipse);
-	MakeSomeItem(&s_struct, SVG_TAG_LINE, p_ptDrawing, svgParseLine);
-	MakeSomeItem(&s_struct, SVG_TAG_POLYLINE, p_ptDrawing, svgParsePolyline);
-	MakeSomeItem(&s_struct, SVG_TAG_POLYGON, p_ptDrawing, svgParsePolygon);
+	MakeSomeItem2(&s_struct, SVG_TAG_TITLE, p_ptDrawing, svgParseTitle);
+	MakeSomeItem2(&s_struct, SVG_TAG_DESC, p_ptDrawing, svgParseDesc);
+	MakeSomeItem2(&s_struct, SVG_TAG_GROUP, p_ptDrawing, svgParseGroup);
+	MakeSomeItem2(&s_struct, SVG_TAG_PATH, p_ptDrawing, svgParsePath);
+	MakeSomeItem2(&s_struct, SVG_TAG_RECT, p_ptDrawing, svgParseRect);
+	MakeSomeItem2(&s_struct, SVG_TAG_CIRCLE, p_ptDrawing, svgParseCircle);
+	MakeSomeItem2(&s_struct, SVG_TAG_ELLIPSE, p_ptDrawing, svgParseEllipse);
+	MakeSomeItem2(&s_struct, SVG_TAG_LINE, p_ptDrawing, svgParseLine);
+	MakeSomeItem2(&s_struct, SVG_TAG_POLYLINE, p_ptDrawing, svgParsePolyline);
+	MakeSomeItem2(&s_struct, SVG_TAG_POLYGON, p_ptDrawing, svgParsePolygon);
 
 	return ptItem;
 }

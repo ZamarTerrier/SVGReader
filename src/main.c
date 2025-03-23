@@ -700,8 +700,6 @@ int main(){
 
     ParceSvgItems(temp->tItemList.ptItem);
 
-    float xa, ya, xb, yb, xc, yc, xm, ym, xn, yn, x, y, x1, y1, x2, y2, x3, y3, x4, y4;
-
     while(!TEngineWindowIsClosed()){
 
         TEnginePoolEvents();
@@ -763,7 +761,9 @@ int main(){
         while(item != NULL){
 
             svgPathCommand *comm = NULL;
+            vec3 color = vec3_f(svgtiny_RED(item->state.fill) / 255.0, svgtiny_GREEN(item->state.fill) / 255.0, svgtiny_BLUE(item->state.fill) / 255.0);
             if(item->tKind == SVG_ITEM_KIND_PATH){
+
 
                 comm = item->tParameters.tPath.ptFirstCommand;
 
@@ -777,8 +777,20 @@ int main(){
 
                     //	MoveTo //	LineTo
                     if((comm->tId == SVG_PATH_CMD_ID_MOVETO_REL) || (comm->tId == SVG_PATH_CMD_ID_MOVETO_ABS) || (comm->tId == SVG_PATH_CMD_ID_LINETO_ABS) || (comm->tId == SVG_PATH_CMD_ID_LINETO_REL)){
+
                         x = comm->tParameters.tMoveTo.tX.fValue;
                         y = comm->tParameters.tMoveTo.tY.fValue; 
+                        
+                        if((comm->tId == SVG_PATH_CMD_ID_MOVETO_REL) || (comm->tId == SVG_PATH_CMD_ID_LINETO_REL)){
+                            x += last_x;
+                            y += last_y;
+                        }
+
+                        if((comm->tId == SVG_PATH_CMD_ID_MOVETO_REL) || (comm->tId == SVG_PATH_CMD_ID_MOVETO_ABS)){
+                            subpath_first_x = x;
+                            subpath_first_y = y;
+                        }
+
                         last_cubic_x = last_quad_x = last_x = x;
                         last_cubic_y = last_quad_y = last_y = y;
                         PathLineTo(vec2_f(x * scale, y * scale));
@@ -810,7 +822,7 @@ int main(){
                         last_cubic_x = last_quad_x = last_x = x;
                         last_cubic_y = last_quad_y = last_y;
                             
-                        PathLineTo(vec2_f(x* scale, y* scale));
+                        PathLineTo(vec2_f(x * scale, y * scale));
                     }
                     //	Cubic CurveTo
                     else if((comm->tId == SVG_PATH_CMD_ID_CUBIC_CURVETO_REL) || (comm->tId == SVG_PATH_CMD_ID_CUBIC_CURVETO_ABS)){
@@ -858,7 +870,7 @@ int main(){
                         last_quad_x     = last_x = x;
                         last_quad_y     = last_y = y;    
                         
-                        PathBezierCubicCurveTo(vec2_f(x, y), vec2_f(x1, y1), vec2_f(x2, y2), 0);
+                        PathBezierCubicCurveTo(vec2_f(x1 * scale, y1 * scale), vec2_f(x2 * scale, y2 * scale), vec2_f(x * scale, y * scale), 10);
                     }
                     //	Quadratic CurveTo
                     else if((comm->tId == SVG_PATH_CMD_ID_QUADRATIC_CURVETO_REL) || (comm->tId == SVG_PATH_CMD_ID_QUADRATIC_CURVETO_ABS)){
@@ -877,7 +889,7 @@ int main(){
                             y += last_y;
                         }
                         
-                        PathBezierCubicCurveTo(vec2_f(x, y), vec2_f(1./3 * last_x + 2./3 * x1, 1./3 * last_y + 2./3 * y1), vec2_f(2./3 * x1 + 1./3 * x, 2./3 * y1 + 1./3 * y), 0);
+                        PathBezierCubicCurveTo(vec2_f((1./3 * last_x + 2./3 * x1) * scale, (1./3 * last_y + 2./3 * y1) * scale), vec2_f((2./3 * x1 + 1./3 * x) * scale, (2./3 * y1 + 1./3 * y) * scale), vec2_f(x * scale, y * scale), 10);
 
                         last_cubic_x = last_x = x;
                         last_cubic_y = last_y = y; 
@@ -899,7 +911,7 @@ int main(){
                             y += last_y;
                         }
 
-                        PathBezierCubicCurveTo(vec2_f(x, y), vec2_f(1./3 * last_x + 2./3 * x1, 1./3 * last_y + 2./3 * y1), vec2_f(2./3 * x1 + 1./3 * x, 2./3 * y1 + 1./3 * y), 0);
+                        PathBezierCubicCurveTo(vec2_f((1./3 * last_x + 2./3 * x1) * scale, (1./3 * last_y + 2./3 * y1) * scale), vec2_f((2./3 * x1 + 1./3 * x) * scale, (2./3 * y1 + 1./3 * y) * scale), vec2_f(x * scale, y * scale), 10);
                         
                         last_cubic_x = last_x = x;
                         last_cubic_y = last_y = y;
@@ -921,18 +933,49 @@ int main(){
 
                         // Because we are filling a closed shape we remove 1 from the count of segments/points
                         const float a_max = M_PI * 2.0f * ((float)num_segments - 1.0f) / (float)num_segments;
-                        PathArcTo(vec2_f(x, y), rx, 0, a_max, 0);
+                        PathArcTo(vec2_f(x * scale, y * scale), rx, 0, a_max, 0);
                     }else if(comm->tId == SVG_PATH_CMD_ID_CLOSEPATH){
                         last_cubic_x = last_quad_x = last_x = subpath_first_x;
                         last_cubic_y = last_quad_y = last_y = subpath_first_y;
+                        
+                        if(item->state.fill == svgtiny_TRANSPARENT)
+                            PathStroke(color, true, item->state.stroke_width);
+                        else
+                            PathFillConvex(color);
                     }
 
                     comm = comm->ptNextCommand;
                 }
 
-                //PathFillConvex(vec3_f(1, 1, 1));
-                PathStroke(vec3_f(1, 1, 1), true, 0.6);
+            }else if(item->tKind == SVG_ITEM_KIND_RECT){
                 
+                vec2 pos = vec2_f(item->tParameters.tRect.tX.fValue * scale, item->tParameters.tRect.tY.fValue * scale);
+                vec2 size = vec2_f(item->tParameters.tRect.tWidth.fValue  * scale, item->tParameters.tRect.tHeight.fValue  * scale);
+
+                if(item->state.fill == svgtiny_TRANSPARENT)
+                    GUIAddRect(pos, v2_add(pos, size), vec3_f(1, 1, 1), 0, 0, item->state.stroke_width);
+                else{
+                    GUIAddRectFilled(pos, v2_add(pos, size), color, 0, 0);
+                }
+                
+            }else if(item->tKind == SVG_ITEM_KIND_ELLIPSE){
+                
+                vec2 pos = vec2_f(item->tParameters.tEllipse.tX.fValue * scale, item->tParameters.tEllipse.tY.fValue * scale);
+                vec2 size = vec2_f(item->tParameters.tEllipse.tRadiusX.fValue  * scale, item->tParameters.tEllipse.tRadiusY.fValue  * scale);
+                
+                if(item->state.fill == svgtiny_TRANSPARENT)
+                    GUIAddEllipse(pos, size, vec3_f(1,1,1), 0, 0, item->state.stroke_width);
+                else{
+                    GUIAddEllipseFilled(pos, size, color, 0, 0);
+                }
+                
+            }else if(item->tKind == SVG_ITEM_KIND_CIRCLE){
+
+                if(item->state.fill == svgtiny_TRANSPARENT)
+                    GUIAddCircle(vec2_f(item->tParameters.tCircle.tX.fValue * scale, item->tParameters.tCircle.tY.fValue * scale), item->tParameters.tCircle.tRadius.fValue * scale, vec3_f(1, 1, 1), 0, item->state.stroke_width);
+                else{
+                    GUIAddCircleFilled(vec2_f(item->tParameters.tCircle.tX.fValue * scale, item->tParameters.tCircle.tY.fValue * scale), item->tParameters.tCircle.tRadius.fValue * scale, color, 0);
+                }
             }
 
             item = item->ptNextItem;
