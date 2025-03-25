@@ -47,11 +47,15 @@ svgDrawing* svgOpenFile( const char *szFile )
 
 	//	SVG's version number
     cxml_attribute_node *attribute = cxml_table_get(ptXml->attributes, "version");
-	if( ( szValue = cxml_string_as_raw(&attribute->value)) !=NULL )
+	if( attribute !=NULL ){
+		szValue = cxml_string_as_raw(&attribute->value);
 		ptDrawing->szVersion = strdup( szValue );
+	}
 	attribute = cxml_table_get(ptXml->attributes, "id");
-	if( ( szValue = cxml_string_as_raw(&attribute->value)) !=NULL )
+	if( attribute !=NULL ){
+		szValue = cxml_string_as_raw(&attribute->value);
 		ptDrawing->szId = strdup( szValue );
+	}
 	attribute = cxml_table_get(ptXml->attributes, "x");
 	if( attribute !=NULL ){
 		szValue = cxml_string_as_raw(&attribute->value);

@@ -40,6 +40,9 @@ svgItem* svgNewItem( cxml_element_node *ptXmlNode )
 		ptItem->szId = strdup( szValue );
 	}
 
+	ptItem->state.fill = svgtiny_TRANSPARENT;
+	ptItem->state.stroke_width = 0.6;
+
 	return ptItem;
 }
 
@@ -230,6 +233,31 @@ void StyleParcing(cxml_element_node *ptXmlNode, struct svgtiny_parse_state *stat
 						state->viewport_width, *state);
 			free(value);
 		}
+	}else{
+   		char *szValue;
+
+		attribute = cxml_table_get(ptXmlNode->attributes, "fill");
+		
+		if(attribute != NULL){
+			szValue = cxml_string_as_raw(&attribute->value);
+			_svgtiny_parse_color(szValue, &state->fill, &state->fill_grad, state);
+		}
+
+		attribute = cxml_table_get(ptXmlNode->attributes, "stroke");
+		
+		if(attribute != NULL){
+			szValue = cxml_string_as_raw(&attribute->value);
+			_svgtiny_parse_color(szValue, &state->stroke, &state->stroke_grad, state);
+		}
+
+		attribute = cxml_table_get(ptXmlNode->attributes, "stroke-width");
+		
+		if(attribute != NULL){
+			szValue = cxml_string_as_raw(&attribute->value);
+			state->stroke_width = _svgtiny_parse_length(szValue,
+						state->viewport_width, *state);
+		}
+
 	}
 }
 

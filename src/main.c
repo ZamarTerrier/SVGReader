@@ -54,6 +54,7 @@ void ParceSvgItems(svgItem *item){
 
     while(item != NULL){    
         svgPathCommand *comm = NULL;
+        svgPathCommand *prev_comm = NULL;
         vec3 color_fill = vec3_f(svgtiny_RED(item->state.fill) / 255.0, svgtiny_GREEN(item->state.fill) / 255.0, svgtiny_BLUE(item->state.fill) / 255.0);
         vec3 color_stroke = vec3_f(svgtiny_RED(item->state.stroke) / 255.0, svgtiny_GREEN(item->state.stroke) / 255.0, svgtiny_BLUE(item->state.stroke) / 255.0);
         if(item->tKind == SVG_ITEM_KIND_PATH){  
@@ -77,15 +78,19 @@ void ParceSvgItems(svgItem *item){
                     if((comm->tId == SVG_PATH_CMD_ID_MOVETO_REL) || (comm->tId == SVG_PATH_CMD_ID_MOVETO_ABS)){
                         subpath_first_x = x;
                         subpath_first_y = y;
+                        
+                        if(prev_comm != NULL)
+                            PathStroke(color_stroke, true, item->state.stroke_width, false);
                     }   
                     last_cubic_x = last_quad_x = last_x = x;
                     last_cubic_y = last_quad_y = last_y = y;
+
                     PathLineTo(vec2_f(x * scale, y * scale));   
                 }
                 //	Vertical LineTo
                 else if((comm->tId == SVG_PATH_CMD_ID_VERTICAL_LINETO_REL) || (comm->tId == SVG_PATH_CMD_ID_VERTICAL_LINETO_ABS)){
 
-                    x = comm->tParameters.tLineTo.tX.fValue;
+                    x = last_x;
                     y = comm->tParameters.tLineTo.tY.fValue;    
                     if(comm->tId == SVG_PATH_CMD_ID_VERTICAL_LINETO_REL)
                         y += last_y;    
@@ -98,9 +103,9 @@ void ParceSvgItems(svgItem *item){
                 else if((comm->tId == SVG_PATH_CMD_ID_HORIZONTAL_LINETO_REL) || (comm->tId == SVG_PATH_CMD_ID_HORIZONTAL_LINETO_ABS)){
 
                     x = comm->tParameters.tLineTo.tX.fValue;
-                    y = comm->tParameters.tLineTo.tY.fValue;    
+                    y = last_y;  
                     if(comm->tId == SVG_PATH_CMD_ID_HORIZONTAL_LINETO_REL)
-                        x += last_y;    
+                        x += last_x;    
                     last_cubic_x = last_quad_x = last_x = x;
                     last_cubic_y = last_quad_y = last_y;
 
@@ -207,19 +212,19 @@ void ParceSvgItems(svgItem *item){
                     PathArcTo(vec2_f(x * scale, y * scale), rx, 0, a_max, 0);
                 }else if(comm->tId == SVG_PATH_CMD_ID_CLOSEPATH){
                     last_cubic_x = last_quad_x = last_x = subpath_first_x;
-                    last_cubic_y = last_quad_y = last_y = subpath_first_y;
-
-                    bool save = item->state.stroke != svgtiny_TRANSPARENT;
-
-                    if(item->state.fill != svgtiny_TRANSPARENT)
-                        PathFillConvex(color_fill, save);
-
-                    if(item->state.stroke != svgtiny_TRANSPARENT)
-                        PathStroke(color_stroke, true, item->state.stroke_width, false);
-                        
+                    last_cubic_y = last_quad_y = last_y = subpath_first_y;                        
                 }   
+                prev_comm = comm;
                 comm = comm->ptNextCommand;
-            }   
+            }
+            
+            bool save = item->state.stroke != svgtiny_TRANSPARENT;          
+            if(item->state.fill != svgtiny_TRANSPARENT)
+                PathFillConvex(color_fill, save);      
+
+            if(item->state.stroke != svgtiny_TRANSPARENT)
+                PathStroke(color_stroke, true, item->state.stroke_width, false);
+
         }else if(item->tKind == SVG_ITEM_KIND_RECT){
 
             vec2 pos = vec2_f(item->tParameters.tRect.tX.fValue * scale, item->tParameters.tRect.tY.fValue * scale);
@@ -263,12 +268,13 @@ int main(){
 
     ParceSvgItems(temp->tItemList.ptItem);
 
+
     while(!TEngineWindowIsClosed()){
 
         TEnginePoolEvents();
 
         svgItem *item = temp->tItemList.ptItem;
-
+        
         ParceSvgItems(item);
         
         TEngineRender();
