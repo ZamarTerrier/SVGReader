@@ -55,8 +55,8 @@ void ParceSvgItems(svgItem *item){
     while(item != NULL){    
         svgPathCommand *comm = NULL;
         svgPathCommand *prev_comm = NULL;
-        vec3 color_fill = vec3_f(svgtiny_RED(item->state.fill) / 255.0, svgtiny_GREEN(item->state.fill) / 255.0, svgtiny_BLUE(item->state.fill) / 255.0);
-        vec3 color_stroke = vec3_f(svgtiny_RED(item->state.stroke) / 255.0, svgtiny_GREEN(item->state.stroke) / 255.0, svgtiny_BLUE(item->state.stroke) / 255.0);
+        vec4 color_fill = vec4_f(svgtiny_RED(item->state.fill) / 255.0, svgtiny_GREEN(item->state.fill) / 255.0, svgtiny_BLUE(item->state.fill) / 255.0, 1.0f);
+        vec4 color_stroke = vec4_f(svgtiny_RED(item->state.stroke) / 255.0, svgtiny_GREEN(item->state.stroke) / 255.0, svgtiny_BLUE(item->state.stroke) / 255.0, 1.0f);
         if(item->tKind == SVG_ITEM_KIND_PATH){  
             comm = item->tParameters.tPath.ptFirstCommand;  
             float last_x = 0, last_y = 0;
@@ -276,6 +276,8 @@ int main(){
         svgItem *item = temp->tItemList.ptItem;
         
         ParceSvgItems(item);
+
+        GUIAddRect(vec2_f(100, 100), vec2_f(200, 200), vec4_f(1, 1, 1, 1.0), 0, 0, 1);
         
         TEngineRender();
     }
